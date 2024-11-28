@@ -1,9 +1,11 @@
+from enetity.data_enetity import MsgData
+
 """
 解析json格式的工具
 """
 
 
-def extract_message_details(json_data):
+def extract_message_details(json_data: dict) -> MsgData:
     """
     从 JSON 数据解析并提取发送人信息和消息内容
 
@@ -23,35 +25,21 @@ def extract_message_details(json_data):
         if message_type == "group":
             group_id = json_data.get("group_id", "未知群ID")
 
-        # 解析消息内容 (提取 type: text 的内容为显示形式)
-        message_list = []
-        for message in json_data.get("message", []):
-            msg_type = message.get("type")
-            msg_data = message.get("data")
-
-            if msg_type == "text":
-                message_list.append(msg_data.get("text", ""))
-            elif msg_type == "face":
-                message_list.append(f"[表情: {msg_data.get('id')}]")
-            elif msg_type == "mface":
-                summary = msg_data.get("summary", "无描述")
-                message_list.append(f"[动画表情: {summary}]")
-            elif msg_type == "image":
-                message_list.append(f"[图片: {msg_data.get('url', '无链接')}]")
-            else:
-                message_list.append(f"[未知类型: {msg_type}]")
-
         # 构造提取结果
         result = {
+            "target_id": sender_id,
             "sender_id": sender_id,
             "sender_name": sender_name,
             "message_type": message_type,
-            "messages": message_list,
+            "messages": json_data.get("message", []),
+            "datas": json_data.get("datas", [])
         }
         if group_id:
             result["group_id"] = group_id
+            result['target_id'] = group_id
+        msg_data = MsgData(**result)
 
-        return result
+        return msg_data
 
     except Exception as e:
         print(f"解析消息时出现错误: {e}")
