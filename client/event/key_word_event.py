@@ -4,6 +4,7 @@ from enetity.data_enetity import MsgData
 from enetity.good_morning_enetity import GoodMorningManager
 from utils.post_utils import send_text_msg, send_mface_msg, send_at_text_msg
 from utils.llm_utils import daily_good_morning_roll
+from utils.json_utils import check_equal_key_words
 
 """
 通过关键词来触发的事件
@@ -25,7 +26,7 @@ async def event_kw_hello_world(data: MsgData) -> None:
     """
     messages = data.messages
 
-    if '.hello' in messages:
+    if check_equal_key_words(messages, ['.hello']):
         send_text_msg(data.target_id, data.message_type, "Hello World")
 
 
@@ -35,13 +36,13 @@ async def event_kw_mface(data: MsgData) -> None:
     """
     messages = data.messages
 
-    if ".表情包" in messages:
+    if check_equal_key_words(messages, ['.表情包']):
         send_mface_msg(data.target_id, data.message_type, '[哈欠]', 'https://gxh.vip.qq.com/club/item/parcel/item/12/12a2308d790509abb90cafff6161d900/raw300.gif', '12a2308d790509abb90cafff6161d900', 240792, '0dc7681880e867fc')
 
 
 async def event_kw_good_morning(data: MsgData) -> None:
     """
-    通过关键词触发的事件
+    早安事件，每人每日只可以触发一次，且只能在指定时间段触发
     """
     messages = data.messages
 
@@ -50,24 +51,12 @@ async def event_kw_good_morning(data: MsgData) -> None:
     # 获取当前小时
     current_hour = current_time.hour
 
-    condition_flag = False
-    for message in messages:
-        if (message['type'] == 'text'
-            and (
-                '早' in message['data']['text']
-                 or '早上好' in message['data']['text']
-                 or '早安' in message['data']['text']
-                )
-            ):
-            condition_flag = True
-            break
-
     # 判断时间区间
-    if condition_flag:
+    if check_equal_key_words(messages, ['早上好', '早安', '早', 'morning', 'good morning']):
         if 0 <= current_hour < 14:
             if good_morning_manager.update(data.message_type, data.target_id, data.sender_id):
                 lucy_msg = daily_good_morning_roll()
-                send_at_text_msg(data.target_id, data.message_type, f"{lucy_msg}", data.sender_id)
+                send_text_msg(data.target_id, data.message_type, f"{data.sender_name}\n{lucy_msg}",forward_msg_flag=True)
             else:
                 send_at_text_msg(data.target_id, data.message_type, "(*´∀`)~♥今天已经早安过了哦", data.sender_id)
         elif 14 <= current_hour < 19:

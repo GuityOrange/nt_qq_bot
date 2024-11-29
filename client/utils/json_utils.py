@@ -43,3 +43,44 @@ def extract_message_details(json_data: dict) -> MsgData:
 
     except Exception as e:
         print(f"解析消息时出现错误: {e}")
+
+
+def wrap_as_forward_messages(messages_list: list[list[dict]]) -> list[dict]:
+    """
+    将消息包装为转发消息
+    :param messages_list: 消息列表
+    :return: 转发消息列表
+    """
+    if not isinstance(messages_list[0], list):
+        print(f'wrap_as_forward_messages: messages_list[0] is not list')
+        assert 0
+    forward_messages = []
+    for messages in messages_list:
+        forward_messages.append({
+            "type": "node",
+            "data": {
+                'content': messages
+            }
+        })
+    return forward_messages
+
+
+def check_equal_key_words(messages: list[dict], key_words: list[str]) -> bool:
+    """
+    检查是否消息文本完全匹配关键词
+    """
+    for message in messages:
+        if message['type'] == 'text' and message['data']['text'] in key_words:
+            return True
+    return False
+
+def check_part_key_words(messages: list[dict], key_words: list[str]) -> bool:
+    """
+    检查是否消息文本包含关键词
+    """
+    for message in messages:
+        if message['type'] == 'text':
+            for key_word in key_words:
+                if key_word in message['data']['text']:
+                    return True
+    return False
